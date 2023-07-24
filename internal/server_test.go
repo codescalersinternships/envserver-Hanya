@@ -8,6 +8,7 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -55,6 +56,8 @@ func TestServer_Run(t *testing.T) {
 				t.Errorf("Server.Run returned an error: %v", err)
 			}
 		}()
+		time.Sleep(1 * time.Second)
+
 		resp, err := http.Get("http://localhost:" + fmt.Sprintf("%d", server.port) + "/env")
 		assert.Nil(t, err)
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
