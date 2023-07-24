@@ -30,6 +30,7 @@ func (server *Server) Run() error {
 	http.HandleFunc("/env", envHandler)
 	http.HandleFunc("/env/", envKeyHandler)
 	err := http.ListenAndServe(fmt.Sprintf(":%d", server.port), nil)
+
 	return err
 }
 
@@ -43,7 +44,7 @@ func envKeyHandler(w http.ResponseWriter, r *http.Request) {
 	key := strings.TrimPrefix(r.URL.Path, "/env/")
 	value := os.Getenv(key)
 	if value == "" {
-		http.NotFound(w, r)
+		w.WriteHeader(http.StatusNotFound)
 		return
 	}
 	fmt.Fprintln(w, value)
