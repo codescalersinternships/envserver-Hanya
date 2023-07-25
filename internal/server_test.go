@@ -153,7 +153,8 @@ func TestEnvHandler(t *testing.T) {
 				assert.Equal(t, http.StatusOK, res.Code)
 				expectedRes := httptest.NewRecorder()
 				encoder := json.NewEncoder(expectedRes)
-				encoder.Encode(os.Environ())
+				err:=encoder.Encode(os.Environ())
+				assert.NoError(t,err,"couldn't encode to JSON format")
 				assert.Equal(t, expectedRes.Body.String(), res.Body.String())
 			}
 		})

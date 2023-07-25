@@ -56,7 +56,10 @@ func getEnv(w http.ResponseWriter, _ *http.Request) {
 	encoder := json.NewEncoder(w)
 	envVars := os.Environ()
 	w.WriteHeader(http.StatusOK)
-	encoder.Encode(&envVars)
+	err := encoder.Encode(&envVars)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+	}
 }
 
 // getKeyValue displays key's value
@@ -67,8 +70,14 @@ func getKeyValue(w http.ResponseWriter, r *http.Request) {
 	if value == "" {
 		w.WriteHeader(http.StatusNotFound)
 		errMessage := "key not found"
-		encoder.Encode(&errMessage)
+		err := encoder.Encode(&errMessage)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+		}
 		return
 	}
-	encoder.Encode(&value)
+	err := encoder.Encode(&value)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+	}
 }
