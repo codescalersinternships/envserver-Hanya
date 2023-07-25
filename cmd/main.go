@@ -1,22 +1,22 @@
 package main
 
 import (
-	"fmt"
-	"os"
+	"flag"
+	"log"
 
 	envserver "github.com/codescalersinternships/envserver-Hanya/internal"
 )
 
 func main() {
-	server, err := envserver.NewServer(3000)
+	var port int
+	flag.IntVar(&port,"p",8080,"port that will be used to run the app")
+	server, err := envserver.NewServer(port)
 	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+		log.Fatal(err)
 	}
 	err = server.Run()
 	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+		log.Fatal(err)
 	}
 
 }

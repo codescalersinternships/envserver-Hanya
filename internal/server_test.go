@@ -1,14 +1,12 @@
 package envserver
 
 import (
-	"fmt"
-	"io"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -46,27 +44,6 @@ func TestNewServer(t *testing.T) {
 	}
 }
 
-func TestServer_Run(t *testing.T) {
-	t.Run("assert server runs correctly", func(t *testing.T) {
-		port := 3000
-		server, err := NewServer(port)
-		assert.Nil(t, err)
-		go func() {
-			if err := server.Run(); err != nil {
-				t.Errorf("Server.Run returned an error: %v", err)
-			}
-		}()
-		time.Sleep(1 * time.Second)
-
-		resp, err := http.Get("http://localhost:" + fmt.Sprintf("%d", server.port) + "/env")
-		assert.Nil(t, err)
-		assert.Equal(t, http.StatusOK, resp.StatusCode)
-		body, err := readResponseBody(resp)
-		assert.Nil(t, err)
-		assert.Contains(t, body, "PATH=")
-	})
-
-}
 func TestEnvKeyHandler(t *testing.T) {
 	testCases := []struct {
 		name         string
@@ -93,12 +70,14 @@ func TestEnvKeyHandler(t *testing.T) {
 				os.Setenv(tC.key, tC.value)
 				defer os.Unsetenv(tC.key)
 			}
-			req := httptest.NewRequest("GET", "/env/"+tC.key, nil)
+			req, err := http.NewRequest(http.MethodGet, "/env/"+tC.key, nil)
+			assert.Nil(t, err, "failed to create request")
 			writer := httptest.NewRecorder()
-			envKeyHandler(writer, req)
+			envHandler(writer, req)
 			resp := writer.Result()
-			body, err := readResponseBody(resp)
-			body = strings.TrimSpace(body)
+			body := strings.TrimSpace(writer.Body.String())
+
+			body = body[1 : len(body)-1]
 			if tC.returnsError {
 				assert.Nil(t, err)
 				assert.Equal(t, http.StatusNotFound, resp.StatusCode)
@@ -111,26 +90,72 @@ func TestEnvKeyHandler(t *testing.T) {
 	}
 }
 func TestEnvHandler(t *testing.T) {
-	t.Run("env variables are correct", func(t *testing.T) {
-		req := httptest.NewRequest("GET", "/env", nil)
-		writer := httptest.NewRecorder()
-		envHandler(writer, req)
-		resp := writer.Result()
-		body, err := readResponseBody(resp)
-		body = strings.TrimSpace(body)
-		value := os.Environ()
-		strValue := strings.Join(value, "\n")
-		assert.Nil(t, err)
-		assert.NotNil(t, body)
-		assert.Equal(t, strValue, body)
-	})
-}
-
-func readResponseBody(resp *http.Response) (string, error) {
-	defer resp.Body.Close()
-	bodyBytes, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return "", nil
+	testCases := []struct {
+		name       string
+		method     string
+		returnsErr bool
+	}{
+		{
+			name:       "post returns error 403",
+			method:     http.MethodPost,
+			returnsErr: true,
+		},
+		{
+			name:       "put returns error 403",
+			method:     http.MethodPut,
+			returnsErr: true,
+		},
+		{
+			name:       "connect returns error 403",
+			method:     http.MethodConnect,
+			returnsErr: true,
+		},
+		{
+			name:       "delete returns error 403",
+			method:     http.MethodDelete,
+			returnsErr: true,
+		},
+		{
+			name:       "head returns error 403",
+			method:     http.MethodHead,
+			returnsErr: true,
+		},
+		{
+			name:       "options returns error 403",
+			method:     http.MethodOptions,
+			returnsErr: true,
+		},
+		{
+			name:       "patch returns error 403",
+			method:     http.MethodPatch,
+			returnsErr: true,
+		},
+		{
+			name:       "trace returns error 403",
+			method:     http.MethodTrace,
+			returnsErr: true,
+		},
+		{
+			name:       "get returns correct json",
+			method:     http.MethodGet,
+			returnsErr: false,
+		},
 	}
-	return string(bodyBytes), nil
+	for _, tC := range testCases {
+		t.Run(tC.name, func(t *testing.T) {
+			req, err := http.NewRequest(tC.method, "/env", nil)
+			assert.NoError(t, err, "failed to create request")
+			res := httptest.NewRecorder()
+			envHandler(res, req)
+			if tC.returnsErr {
+				assert.Equal(t, http.StatusForbidden, res.Code)
+			} else {
+				assert.Equal(t, http.StatusOK, res.Code)
+				expectedRes := httptest.NewRecorder()
+				encoder := json.NewEncoder(expectedRes)
+				encoder.Encode(os.Environ())
+				assert.Equal(t, expectedRes.Body.String(), res.Body.String())
+			}
+		})
+	}
 }

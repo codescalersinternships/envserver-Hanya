@@ -13,7 +13,7 @@ Envserver is a simple web application that displays environment variables on a l
 # Errors
 - ErrInvalidPort : raised when a reserved or out-of-range port number is used 
 # How to Test
-This package includes unit tests for 100% of the internal functions, run them using this command:
+This package includes unit tests for 83% of the internal functions, run them using this command:
 ```go
 $ go test ./...
 ```

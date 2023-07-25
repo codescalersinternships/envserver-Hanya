@@ -1,6 +1,7 @@
 package envserver
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -27,25 +28,47 @@ func NewServer(port int) (*Server, error) {
 
 // Run sets the handler for each route and runs server
 func (server *Server) Run() error {
-	http.HandleFunc("/env", envHandler)
-	http.HandleFunc("/env/", envKeyHandler)
-	err := http.ListenAndServe(fmt.Sprintf(":%d", server.port), nil)
-
+	mux := http.NewServeMux()
+	mux.HandleFunc("/env", envHandler)
+	mux.HandleFunc("/env/", envHandler)
+	err := http.ListenAndServe(fmt.Sprintf(":%d", server.port), mux)
 	return err
 }
 
+// envHandler handles server routes
 func envHandler(w http.ResponseWriter, r *http.Request) {
-	for _, e := range os.Environ() {
-		fmt.Fprintln(w, e)
+	if r.Method != http.MethodGet {
+		w.WriteHeader(http.StatusForbidden)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	key := strings.TrimPrefix(r.URL.Path, "/env")
+	switch key {
+	case "":
+		getEnv(w, r)
+	default:
+		getKeyValue(w, r)
 	}
 }
 
-func envKeyHandler(w http.ResponseWriter, r *http.Request) {
+// getEnv displays all environment variables
+func getEnv(w http.ResponseWriter, _ *http.Request) {
+	encoder := json.NewEncoder(w)
+	envVars := os.Environ()
+	w.WriteHeader(http.StatusOK)
+	encoder.Encode(&envVars)
+}
+
+// getKeyValue displays key's value
+func getKeyValue(w http.ResponseWriter, r *http.Request) {
 	key := strings.TrimPrefix(r.URL.Path, "/env/")
+	encoder := json.NewEncoder(w)
 	value := os.Getenv(key)
 	if value == "" {
 		w.WriteHeader(http.StatusNotFound)
+		errMessage := "key not found"
+		encoder.Encode(&errMessage)
 		return
 	}
-	fmt.Fprintln(w, value)
+	encoder.Encode(&value)
 }
