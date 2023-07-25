@@ -2,25 +2,8 @@
 # Overivew
 Envserver is a simple web application that displays environment variables on a local server
 # How to Install and Run
-1. Run this command in your terminal
-    ```go
-    $ go get -d github.com/codescalersinternships/envserver-Hanya
-    ```
-2. Import the package's internal functions
-    ```go
-    import envserver "github.com/codescalersinternships/envserver-Hanya/internal"
-    ```
-
-3. Start a new server in your main function and run it
-    ```go
-	server, err := envserver.NewServer(3000)
-    err = server.Run()
-    ```
-4. Build the package
-    ```go
-    $ go build -o envserver cmd/main.go
-    ```
-5. Run your program
+1. Download the latest release for the server [from here](https://github.com/codescalersinternships/envserver-Hanya/releases/latest)
+2. Run the binary file
     ```go
     $ ./envserver
     ```
