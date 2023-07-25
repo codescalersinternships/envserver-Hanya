@@ -36,7 +36,7 @@ func TestNewServer(t *testing.T) {
 				assert.Equal(t, ErrInvalidPortNum, err)
 				assert.Nil(t, server)
 			} else {
-				assert.Nil(t, err)
+				assert.NoError(t, err)
 				assert.NotNil(t, server)
 				assert.Equal(t, tC.port, server.port)
 			}
@@ -71,7 +71,7 @@ func TestEnvKeyHandler(t *testing.T) {
 				defer os.Unsetenv(tC.key)
 			}
 			req, err := http.NewRequest(http.MethodGet, "/env/"+tC.key, nil)
-			assert.Nil(t, err, "failed to create request")
+			assert.NoError(t, err, "failed to create request")
 			writer := httptest.NewRecorder()
 			envHandler(writer, req)
 			resp := writer.Result()
@@ -79,10 +79,10 @@ func TestEnvKeyHandler(t *testing.T) {
 
 			body = body[1 : len(body)-1]
 			if tC.returnsError {
-				assert.Nil(t, err)
+				assert.NoError(t, err)
 				assert.Equal(t, http.StatusNotFound, resp.StatusCode)
 			} else {
-				assert.Nil(t, err)
+				assert.NoError(t, err)
 				assert.Equal(t, http.StatusOK, resp.StatusCode)
 				assert.Equal(t, value, body)
 			}

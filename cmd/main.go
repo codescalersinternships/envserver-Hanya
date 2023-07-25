@@ -10,6 +10,7 @@ import (
 func main() {
 	var port int
 	flag.IntVar(&port,"p",8080,"port that will be used to run the app")
+	flag.Parse()
 	server, err := envserver.NewServer(port)
 	if err != nil {
 		log.Fatal(err)
@@ -18,5 +19,4 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-
 }
